@@ -1,20 +1,4 @@
 
-
-ext.name = 'lisi'
-
-ext{
-
-    phone =890
-    address = 'hello'
-}
-
-task one{
-
-    println "$name"
-    println "$phone"
-
-}
-
 buildscript {
     repositories {
         maven { url 'https://jitpack.io' }
@@ -34,7 +18,13 @@ buildscript {
         // in the individual module build.gradle files
     }
 }
+allprojects {
 
+    repositories {
+
+        google()
+    }
+}
 task clean(type: Delete) {
     delete rootProject.buildDir
 }

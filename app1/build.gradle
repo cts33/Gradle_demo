@@ -3,6 +3,8 @@ plugins {
     id 'kotlin-android'
 }
 
+
+
 android {
     compileSdk 31
 
@@ -42,6 +44,3 @@ dependencies {
     androidTestImplementation 'androidx.test.espresso:espresso-core:3.3.0'
 }
 
-task hello(){
-    println "hello"
-}
