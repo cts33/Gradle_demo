@@ -197,8 +197,210 @@ android{
 
 
 
-## 1. 使用共享库
+## 6. BuildConfig
 
-## 1. 使用共享库
-## 1. 使用共享库
-## 1. 使用共享库
+该文件为Android Gradle构建时自动生成，不能修改。
+
+```
+public final class BuildConfig {
+	//是否为debug模式
+  public static final boolean DEBUG = Boolean.parseBoolean("true");
+  //applicationId包名
+  public static final String APPLICATION_ID = "com.example.gradle_"demo";
+  //编译类型
+  public static final String BUILD_TYPE = "debug";
+  //版本号和名字
+  public static final int VERSION_CODE = 1;
+  public static final String VERSION_NAME = "1.0";
+}
+```
+
+还可以在build.gradle文件通过配置，映射到buildConfig.java里。
+
+Gradle插件提供了buildConfigField(type,name,value)
+
+type 字段的类型
+
+name 字段的名称
+
+value 字段的值
+
+可以放到buildTypes里，也可以放到productFlavor里
+
+```
+buildTypes {
+        release {
+            minifyEnabled false
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+
+            buildConfigField "String","UserName","lisi"
+            //SIGNATURE为在gradle.properties的常量
+            buildConfigField "String", "getSignature", "\"${SIGNATURE}\""
+        }
+    }
+    
+    
+   productFlavors {
+        google {
+            buildConfigField 'String','WEB_URL','"http://www.google.com"'
+        }
+        baidu {
+            buildConfigField 'String','WEB_URL','"http://www.baidu.com"'
+        }
+    }   
+```
+
+
+
+## 7. 添加自定义资源resValue
+
+我们不仅可以在res/values定义资源，还可以在build.gradle里定义。
+
+可以在buildTypes里定义，还可以在productFlavors里定义
+
+resValue: type类型，name,value
+
+支持string、id、bool、dimen、integer、color类型
+
+```
+ productFlavors {
+        google {
+            resValue 'string','channel_tips','google渠道欢迎你'
+        }
+        baidu {
+            resValue 'string','channel_tips','baidu渠道欢迎你'
+            resValue 'color','main_bg','#567896'
+            resValue 'integer-array','months','<item>1&lt/item>'
+        }
+    }
+```
+
+
+
+## 8. Java编译选项compileOptions
+
+有时候我们需要指定编译的Java版本，可以使用compileOptions
+
+```
+ compileOptions {
+		encoding = 'utf-8'
+ 		//编译源文件的Java版本
+        sourceCompatibility JavaVersion.VERSION_1_8
+        //配置生成字节码的版本
+        targetCompatibility JavaVersion.VERSION_1_8
+    }
+```
+
+
+
+## 9. 操作ADB 
+
+adb install 有6个选项
+
+-l :锁定app
+
+-r:替换现有APP
+
+-t:允许测试包
+
+-s:把app 安装到SD
+
+-d:允许降级安装
+
+-g:为该APP授予运行时权限
+
+```
+adbOptions{
+        //设置执行adb install 操作
+        installOptions '-r -s'
+        //执行adb超时时间 如果超时会抛出异常CommandRejectException
+        timeOutInMs 1000*5
+        
+ }
+```
+
+## 10. DX选项配置 
+
+```
+andriod{
+	dexOptions{
+		incremental true
+		//配置执行dx命令分配的最大堆内存
+		javaMaxHeapSize '4g'
+		jumboMode true
+	}
+}
+```
+
+> incremental 配置是否启动dx增量模式。目前有很多限制，慎用。
+>
+> jumboMode 配置开启模式，项目比较大，函数超65535,需要强加开启junboMode才能构建。
+>
+> preDexLibrary 配置是否预执行dex Library库工程，提高增量构建速度，默认true
+>
+> threadCount 运行dx命令使用的线程数量。
+
+
+
+## 11 自动清理未使用的资源Resource Shriking 
+
+Android Gradle 为我们提供了在构建大包时自动清理未使用的资源的方法，打包为apk之前，会检测所有资源，是否被引用，如果没有，就不会被打包到apk里。
+
+要结合Code shrinking,就是混淆Proguard,启动minifyEnabled，为了缩减代码。
+
+```
+ buildTypes {
+        release {
+            minifyEnabled true
+            shrinkResources true
+            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+            zipAlignEnabled true
+        }
+    }
+```
+
+自动清理虽好，但是也有缺点，如果代码里有反射逻辑，会区分不了，导致误删。所以提供了keep方法。
+
+#### keep使用
+
+1.新建xml文件，res/raw/keep.xml,
+
+2.通过tools:keep属性来配置
+
+keep.xml
+
+```
+<?xml version="1.0" encoding="utf-8"?>
+<resources xmlns:tools="http://schemas.android.com/tools"
+           tools:shrinkMode="strict"/>
+```
+
+#### resConfig
+
+如果我们只想构建某种语言或者某种类型的资源，就可以使用resConfig
+
+```
+defaultConfig {
+        applicationId "org.flysnow.app.example912"
+        minSdkVersion 14
+        targetSdkVersion 23
+        versionCode 1
+        versionName '1.0.0'
+        //只打包zh 中文 or hdpi
+        resConfigs 'zh'
+    }
+```
+
+
+
+# 10.多项目构建
+
+   ## 1.操作ADB 
+  ## 1.操作ADB 
+   ## 1.操作ADB 
+   ## 1.操作ADB 
+   ## 1.操作ADB 
+   ## 1.操作ADB 
+
+
+      2. 1. 操作ADB 
