@@ -2,3 +2,4 @@
 rootProject.name = "Gradle_demo"
 include ':app1'
 
+include ':library:library_1'

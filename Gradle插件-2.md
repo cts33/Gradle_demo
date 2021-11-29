@@ -395,12 +395,254 @@ defaultConfig {
 
 # 10.多项目构建
 
-   ## 1.操作ADB 
-  ## 1.操作ADB 
-   ## 1.操作ADB 
-   ## 1.操作ADB 
-   ## 1.操作ADB 
-   ## 1.操作ADB 
+   ## 1.android 项目分类
+
+android项目分为库项目、应用项目、测试项目。
+
+```
+com.android.library
+com.android.application
+com.android.test
+```
+
+  ## 1.android多项目设置
+
+一个project可以包含多个module项目。
+
+> MyProject
+>
+> ​	+app
+>
+> ​	+libraries
+>
+> ​			+lib1
+>
+> ​			+lib2
+
+lib1和lib2可以放到libraries文件夹内有setting.gradle文件统一管理。
+
+   ## 1.库引用和配置
+
+app 引用一个library，使用如下方式。
+
+```java
+implementation project(path: ':core')
+```
+
+APP不仅可以引用Android lib项目，还可以引用Java lib，Android lib被打包成AAR包，Javalib被打包成jar包。默认情况下Android库包都是release版本的，也可以通过配置，改为debug的。
+
+```
+android{
+	defaultPublishConfig "debug"
+}
+```
+
+如果有渠道的配置，也可以针对不同的flavor+buildtype配置。
+
+```
+android{
+	//如baidudebug
+	defaultPublishConfig "flavor1debug"
+}
+```
+
+如果想同时发布多个版本的AAR供项目引用。在library里配置
+
+```
+android{
+	publishNonDefault true
+}
+```
+
+然后在APP项目引用不同的AAR
+
+```
+dependencies{
+	flavor1Comile project(path:':lib1',configuration:'flavor1Release')
+}
+```
+
+flavor1渠道就引用lib1的release的AAR包。
 
 
-      2. 1. 操作ADB 
+
+   ## 1.发布库项目到服务器
+
+把库项目发布到自己的maven服务器上。
+
+1.搭建自己的maven私服，推荐Nexus Repository Manager,先去官网下载,解压，找到nexus-2.1-xx\bin\jsw目录，可以看到很多以操作系统命名的文件夹，运行start_nexus脚本即可运行。
+
+2.然后浏览器里打开http://localhost:8081/nexus/即可访问，登录用户名密码，默认admin ,pwd:andmin123.
+
+3.部署好服务器，就可以发布库项目到私服里
+
+```
+apply plugin:'com.android.library'
+apply plugin:'maven'
+
+//配置maven三要素
+version '1.0.0'
+group 'org.flyshow.widget'
+```
+
+
+
+> snapshot概念
+>
+> 如1.0.0-SNAPSHOT,每次发布不用发生变化，maven会自动帮我们下载最新序号最大的版本快照。这种方式适合快速联调。
+
+配置完就可以编写发布脚本了
+
+```
+uploadArchives {
+    repositories {
+        mavenDeployer {
+            repository(url: Mavens.SNAPSHOTS_URL) {
+                authentication(
+                        userName: Mavens.SNAPSHOTS_USERNAME,
+                        password: Mavens.SNAPSHOTS_PASSWORD
+                )
+            }
+            pom.project {
+                version '1.0.7-SNAPSHOT'
+                artifactId 'widgets'
+                groupId 'com.xxx.xxx'
+                description 'xxxxxLayout'
+            }
+        }
+    }
+}
+
+```
+
+发布完成后，就可以引用刚发布的私服库了
+
+```
+
+allprojects {
+    repositories {
+    	maven{
+    		url 'http://localhost:8081/nexus/conetnt/groups/release'
+    	}
+    }
+}    
+```
+
+然后在APP里引用远程库
+
+```
+dependencies{
+	compile 'org.flyshow.xx:1.0.0-SNATSHOT'
+}
+```
+
+
+
+   # 11.Gradle多渠道 
+
+因为发布的渠道不同，意味着要打包的时候，打多个不同的包进行发布。有了flavor后就可以解决问题。
+
+   ## 1.多渠道构建原理
+
+
+
+Android gradle中，定义了一个Build Variant的概念，构建变体。一个构建变体=buildtype + product Flavor。
+
+build type就是release和debug模式
+
+productflavor就是google baidu 。baiduRelease/baiduDebug googleRelease/baiduDebug
+
+```
+android{
+
+	productFlavors{
+		google{}
+		baidu{}
+	}
+}
+```
+
+配置完后，在build Variant就会产生各个渠道和编译类型的组合对象。会产生很多Task
+
+assembleBaidu 
+
+assembleRelease
+
+assembleBaiduRelease
+
+生成各种apk
+
+## 2. Flurry多渠道和友盟 
+
+Flurry和友盟是两个常用的统计分析工具。
+
+1.Flurry
+
+Flurry的统计 以application划分渠道，每个application都有一个key,成为flurry key.当我们在flurry上创建application的时候就自动生成了。
+
+```
+android {
+    compileSdkVersion 23
+    buildToolsVersion "23.0.1"
+
+    defaultConfig {
+    	//applicationId 
+        applicationId "org.flysnow.app.example112"
+        minSdkVersion 14
+        targetSdkVersion 23
+        versionCode 1
+        versionName '1.0.0'
+    }
+    buildTypes {
+        release {
+            minifyEnabled true
+            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+            zipAlignEnabled true
+        }
+    }
+    productFlavors {
+        google {
+        	//flurry 的key --value
+        	//每个渠道都会有FLURRY_KEY和对应的value
+            buildConfigField 'String','FLURRY_KEY','"BHJKOUASDASFKLZL"'
+        }
+        baidu {
+            buildConfigField 'String','FLURRY_KEY','"HJSDKHFJDSF23478"'
+        }
+    }
+}
+```
+
+然后进行初始化
+
+```
+Flurry.init(this,FLURRY_KEY)
+```
+
+2. 友盟
+
+友盟本身有渠道的概念。在manifest.xml里配置
+
+```
+<application>
+	  <meta-data android:name="UMENG_CHANNEL" android:value="Channel ID"/>
+	  ...
+```
+
+
+
+```
+android{ 
+ 	productFlavors {
+        google {
+        }
+        baidu {
+        }
+    }
+
+    productFlavors.all { flavor ->
+        manifestPlaceholders.put("UMENG_CHANNEL",name)
+    }
+}
+```
+
