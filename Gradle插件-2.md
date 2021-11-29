@@ -405,7 +405,7 @@ com.android.application
 com.android.test
 ```
 
-  ## 1.android多项目设置
+  ## 2.android多项目设置
 
 一个project可以包含多个module项目。
 
@@ -421,7 +421,7 @@ com.android.test
 
 lib1和lib2可以放到libraries文件夹内有setting.gradle文件统一管理。
 
-   ## 1.库引用和配置
+   ## 3.库引用和配置
 
 app 引用一个library，使用如下方式。
 
@@ -466,7 +466,7 @@ flavor1渠道就引用lib1的release的AAR包。
 
 
 
-   ## 1.发布库项目到服务器
+   ## 4.发布库项目到服务器
 
 把库项目发布到自己的maven服务器上。
 
@@ -646,3 +646,99 @@ android{
 }
 ```
 
+## 3. 多渠道构建定制
+
+多渠道定制，就是对gradle的productFlavor的配置。
+
+1. applicationId
+
+productFlavor的属性，用于设置该渠道的包名，
+
+```
+android{
+	prdocutFlavors{
+		google{
+			applicationId "com.flyshow.app.axx.google"
+		}
+	}
+}
+//为Google这个渠道设置特有的包名
+```
+
+2. consumerProguardFiles
+
+也是一个productFlavors属性，只对Android库项目有用。当我们发布库项目生成AAR包的时候，使用consumerProguardFiles配置的混淆文件列表也会被打包到AAR里一起发布，这样当应用项目引用这个AAR包，并且启动混淆的时候，会自动使用AAR包里的混淆文件对AAR包里的代码进行混淆，这样就不用对该AAR进行混淆配置了。
+
+```
+android{
+	productFlavors{
+		google{
+			comsumeProguardFiles 'proguard-rules.pro','proguard-android.txt'
+		}
+	}
+}
+```
+
+可以指定多个文件，使用逗号隔开。
+
+3. useJack
+
+标记是否启动Jack和Jill高性能编译器
+
+```
+productFlavors{
+	google{
+		useJack = true
+	}
+}
+```
+
+4. dimension
+
+接受一个字符串，作为productFlavor的维度。对productFlavor进行分组。free和paid都属于版本(version)，x86和arm属于CPU架构(abi)，这样分为两组。而dimension接受的参数就是分组的组名，也是维度名称。
+
+flavorDimensions是我们使用的Android｛｝的方法，和productFlavors{}平级的，一定要先使用flavorDimensions声明维度，才能在productFlavor中使用。
+
+```
+  flavorDimensions "abi", "version"
+    productFlavors {
+        free {
+            dimension 'version'
+        }
+        paid {
+            dimension 'version'
+        }
+        x86 {
+            dimension 'abi'
+        }
+        arm {
+            dimension 'abi'
+        }
+    }
+```
+
+a.android里的defaultConfig配置，也是一个productFlavor对象配置
+
+b.abi维度的productFlavor,被dimension配置标记为abi的productFlavor
+
+c.version维度的productFlavor,被dimension配置标记为verison的productFlavor
+
+优先级为abi>version>defaultConfig ，注意顺序。
+
+最终结果：
+
+ArmFreeDebug
+
+ArmFreeRelease
+
+ArmPaidDebug
+
+ArmPaidRelease
+
+x86FreeDebug
+
+x86FreeRelease
+
+x86PaidDebug
+
+x86PaidRelease
